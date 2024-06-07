@@ -124,6 +124,8 @@ class AddTaskCubit extends Cubit<AddTaskStates> {
     } else if (e.type == DioExceptionType.badResponse) {
       if (e.response?.statusCode == 401) {
         MagicRouter.navigateTo(page: const RefreshTokenView());
+      } else if (e.response?.statusCode == 413) {
+        emit(AddTaskFailedState(msg: "Entity Too Large"));
       } else {
         emit(AddTaskFailedState(msg: e.response?.data["message"]));
       }
@@ -172,6 +174,20 @@ class AddTaskCubit extends Cubit<AddTaskStates> {
 
   //================================================================
 
+  String status = "";
+  List<String> statusName = [
+    "inprogress",
+    "waiting",
+    "finished",
+  ];
+
+  void updateStatus({required String statusS}) {
+    status = statusS;
+    emit(ChangePriorityState());
+  }
+
+  //================================================================
+
   Future<void> editTask({required String id, required String user}) async {
     if (formKey.currentState!.validate()) {
       emit(EditTaskLoadingState());
@@ -184,6 +200,7 @@ class AddTaskCubit extends Cubit<AddTaskStates> {
               "title": controllers.titleController.text,
               "desc": controllers.descController.text,
               "priority": priority,
+              "status": status,
               "user": user,
             },
           ),

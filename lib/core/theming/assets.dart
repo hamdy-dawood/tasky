@@ -7,6 +7,7 @@ class AssetsStrings {
   static const String registerImage = "${baseImages}register_image.png";
   static const String mainImage = "${baseImages}main_image.png";
   static const String addImage = "${baseImages}add_image.png";
+  static const String appIconImage = "${baseImages}app_icon.png";
 
   // Icons
   static const String add = "${baseIcons}add.svg";

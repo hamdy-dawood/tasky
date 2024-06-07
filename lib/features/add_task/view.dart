@@ -31,11 +31,12 @@ class AddTaskView extends StatelessWidget {
     this.editTitle = "",
     this.editDesc = "",
     this.editPriority = "",
+    this.status = "",
   });
 
   final bool fromEdit;
   final String id, user;
-  final String editImageTextUploaded, editTitle, editDesc, editPriority;
+  final String editImageTextUploaded, editTitle, editDesc, editPriority, status;
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +52,7 @@ class AddTaskView extends StatelessWidget {
       editTitle: editTitle,
       editDesc: editDesc,
       editPriority: editPriority,
+      status: status,
     );
   }
 }
@@ -64,11 +66,12 @@ class _AddTaskBody extends StatelessWidget {
     required this.editTitle,
     required this.editDesc,
     required this.editPriority,
+    required this.status,
   });
 
   final bool fromEdit;
   final String id, user;
-  final String editImageTextUploaded, editTitle, editDesc, editPriority;
+  final String editImageTextUploaded, editTitle, editDesc, editPriority, status;
 
   @override
   Widget build(BuildContext context) {
@@ -78,6 +81,7 @@ class _AddTaskBody extends StatelessWidget {
     fromEdit ? cubit.controllers.titleController.text = editTitle : null;
     fromEdit ? cubit.controllers.descController.text = editDesc : null;
     fromEdit ? cubit.priority = editPriority : null;
+    cubit.status = "";
 
     return Scaffold(
       backgroundColor: ColorManager.white,
@@ -158,6 +162,17 @@ class _AddTaskBody extends StatelessWidget {
               _DescTextField(cubit: cubit),
               SizedBox(height: 0.02.sh),
               _PriorityField(cubit: cubit),
+              fromEdit
+                  ? Column(
+                      children: [
+                        SizedBox(height: 0.02.sh),
+                        _StatusField(
+                          cubit: cubit,
+                          status: status,
+                        ),
+                      ],
+                    )
+                  : const SizedBox.shrink(),
               fromEdit
                   ? const SizedBox.shrink()
                   : Padding(
@@ -310,6 +325,75 @@ class _PriorityField extends StatelessWidget {
                                   MagicRouter.navigatePop();
                                 },
                                 title: cubit.priorityName[index],
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _StatusField extends StatelessWidget {
+  const _StatusField({required this.cubit, required this.status});
+
+  final AddTaskCubit cubit;
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<AddTaskCubit, AddTaskStates>(
+      builder: (context, state) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CustomText(
+              text: "Status",
+              color: ColorManager.grey,
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w400,
+            ),
+            SizedBox(height: 10.h),
+            GestureDetector(
+              child: CustomContainer(
+                withIcon: true,
+                text: cubit.status.isNotEmpty ? cubit.status : status,
+              ),
+              onTap: () async {
+                showModalBottomSheet(
+                  context: context,
+                  backgroundColor: ColorManager.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topRight: Radius.circular(15.r),
+                      topLeft: Radius.circular(15.r),
+                    ),
+                  ),
+                  builder: (context) {
+                    return BlocBuilder<AddTaskCubit, AddTaskStates>(
+                      builder: (context, state) {
+                        return Padding(
+                          padding: EdgeInsets.all(0.041.sw),
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: cubit.statusName.length,
+                            itemBuilder: (context, index) {
+                              return ItemContainerWidget(
+                                onTap: () {
+                                  cubit.updateStatus(
+                                    statusS: cubit.statusName[index],
+                                  );
+                                  MagicRouter.navigatePop();
+                                },
+                                title: cubit.statusName[index],
                               );
                             },
                           ),

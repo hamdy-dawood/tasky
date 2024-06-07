@@ -7,6 +7,7 @@ import 'package:tasky_app/core/networking/urls_strings.dart';
 import 'package:tasky_app/core/theming/assets.dart';
 import 'package:tasky_app/core/theming/colors.dart';
 import 'package:tasky_app/core/widgets/custom_text.dart';
+import 'package:tasky_app/core/widgets/dialog.dart';
 import 'package:tasky_app/core/widgets/emit_failed_item.dart';
 import 'package:tasky_app/core/widgets/emit_loading_item.dart';
 import 'package:tasky_app/core/widgets/emit_network_item.dart';
@@ -97,6 +98,7 @@ class _DetailsBody extends StatelessWidget {
                     editTitle: "${cubit.task!.title}",
                     editDesc: "${cubit.task!.desc}",
                     editPriority: "${cubit.task!.priority}",
+                    status: "${cubit.task!.status}",
                   ),
                   itemBuilder: (context) =>
                       MenuItems.items.map(buildItem).toList(),
@@ -186,6 +188,7 @@ class _DetailsBody extends StatelessWidget {
     required String editTitle,
     required String editDesc,
     required String editPriority,
+    required String status,
   }) {
     if (item == MenuItems.itemEdit) {
       MagicRouter.navigateTo(
@@ -197,13 +200,22 @@ class _DetailsBody extends StatelessWidget {
           editTitle: editTitle,
           editDesc: editDesc,
           editPriority: editPriority,
+          status: status,
         ),
       );
     } else if (item == MenuItems.itemDelete) {
-      MagicRouter.navigateTo(
-        page: RemoveAdView(
-          id: id,
-        ),
+      mainDialog(
+        context: context,
+        title: "Delete",
+        subTitle: "Are you sure want to Delete $editTitle?",
+        buttonText: 'Delete',
+        yesPress: () {
+          MagicRouter.navigateTo(
+            page: RemoveAdView(
+              id: id,
+            ),
+          );
+        },
       );
     }
   }

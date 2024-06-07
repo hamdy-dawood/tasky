@@ -4,6 +4,8 @@ class HomeInitialState extends HomeStates {}
 
 class HomeLoadingState extends HomeStates {}
 
+class PaginationHomeLoadingState extends HomeStates {}
+
 class HomeSuccessState extends HomeStates {}
 
 class HomeNetworkErrorState extends HomeStates {}
@@ -13,3 +15,5 @@ class HomeFailedState extends HomeStates {
 
   HomeFailedState({required this.msg});
 }
+
+class OnSelectedState extends HomeStates {}

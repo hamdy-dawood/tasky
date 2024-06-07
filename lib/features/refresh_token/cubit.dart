@@ -32,6 +32,7 @@ class RefreshTokenCubit extends Cubit<RefreshTokenStates> {
           key: 'access_token',
           value: "${response.data['access_token']}",
         );
+        logger.i(response.data['access_token']);
       } else {
         emit(RefreshTokenFailedState());
       }

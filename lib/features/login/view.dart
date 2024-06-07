@@ -140,7 +140,7 @@ class _LoginButton extends StatelessWidget {
           );
         } else if (state is NetworkErrorState) {
           showMessage(
-            message: "check_network",
+            message: "check network",
             color: ColorManager.redPrimary,
           );
         } else if (state is LoginSuccessState) {

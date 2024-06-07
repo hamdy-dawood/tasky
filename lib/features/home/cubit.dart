@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logger/logger.dart';
 import 'package:tasky_app/core/helpers/navigator.dart';
@@ -17,22 +18,31 @@ class HomeCubit extends Cubit<HomeStates> {
   final dioManager = DioManager();
   final logger = Logger();
 
+  final ScrollController scrollController = ScrollController();
+
+  int currentPage = 1;
+  bool isMainLoad = true;
+
   List<TasksModel> products = [];
 
-  Future<void> getProducts() async {
-    emit(HomeLoadingState());
+  Future<void> getProducts({required String status}) async {
+    isMainLoad ? emit(HomeLoadingState()) : emit(PaginationHomeLoadingState());
 
     try {
       final response = await dioManager.get(
         UrlsStrings.tasks,
         json: {
-          "page": "1",
+          "page": currentPage,
+          if (status.isNotEmpty) "status": status,
         },
       );
 
       if (response.statusCode == 200) {
         List<dynamic> data = response.data;
-        products = data.map((item) => TasksModel.fromJson(item)).toList();
+        isMainLoad == true
+            ? products = data.map((item) => TasksModel.fromJson(item)).toList()
+            : products
+                .addAll(data.map((item) => TasksModel.fromJson(item)).toList());
 
         emit(HomeSuccessState());
       } else {
@@ -62,5 +72,52 @@ class HomeCubit extends Cubit<HomeStates> {
       emit(HomeNetworkErrorState());
     }
     logger.e(e);
+  }
+
+  //================================================================
+
+  double get pages {
+    if (products.length + 1 <= 0) return 0.0;
+    return (products.length + 1) / 20;
+  }
+
+  int get roundedNumber {
+    return pages.ceil();
+  }
+
+  Future<void> getNextPage({
+    required String status,
+  }) async {
+    if (currentPage < roundedNumber) {
+      isMainLoad = false;
+      currentPage++;
+      await getProducts(
+        status: status,
+      );
+    }
+  }
+
+  void onRefresh({
+    required String status,
+  }) {
+    products.clear();
+    currentPage = 1;
+    isMainLoad = true;
+    getProducts(
+      status: status,
+    );
+  }
+
+  //================================================================
+  int selectedItem = 0;
+  String selectedItemName = "";
+
+  onSelectedItem({
+    required int index,
+    required String name,
+  }) {
+    selectedItem = index;
+    selectedItemName = name;
+    emit(OnSelectedState());
   }
 }

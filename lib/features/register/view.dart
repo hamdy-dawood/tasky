@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl_phone_field/phone_number.dart';
@@ -157,6 +158,7 @@ class _YearExperienceTextField extends StatelessWidget {
     return BlocBuilder<UserRegisterCubit, UserRegisterStates>(
       builder: (context, state) {
         return CustomTextFormField(
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           controller: cubit.controllers.experienceController,
           hint: "Years of experience...",
           validator: (value) {

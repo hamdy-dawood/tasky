@@ -6,6 +6,7 @@ import 'package:tasky_app/core/helpers/navigator.dart';
 import 'package:tasky_app/core/theming/assets.dart';
 import 'package:tasky_app/core/theming/colors.dart';
 import 'package:tasky_app/core/widgets/custom_text.dart';
+import 'package:tasky_app/core/widgets/dialog.dart';
 import 'package:tasky_app/core/widgets/emit_failed_item.dart';
 import 'package:tasky_app/core/widgets/emit_loading_item.dart';
 import 'package:tasky_app/core/widgets/emit_network_item.dart';
@@ -18,6 +19,7 @@ import 'package:tasky_app/features/scan_qr/view.dart';
 
 import 'cubit.dart';
 import 'states.dart';
+import 'widgets/emit_state_refresh.dart';
 import 'widgets/task_item.dart';
 
 class HomeView extends StatelessWidget {
@@ -26,7 +28,7 @@ class HomeView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => HomeCubit()..getProducts(),
+      create: (context) => HomeCubit(),
       child: const _HomeBody(),
     );
   }
@@ -38,6 +40,22 @@ class _HomeBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = HomeCubit.get(context);
+
+    cubit.selectedItem = 0;
+    cubit.selectedItemName = "";
+    cubit.products.clear();
+    cubit.isMainLoad = true;
+    cubit.currentPage = 1;
+    cubit.getProducts(status: "");
+
+    cubit.scrollController.addListener(() {
+      if (cubit.scrollController.position.pixels ==
+          cubit.scrollController.position.maxScrollExtent) {
+        cubit.getNextPage(
+          status: cubit.selectedItemName,
+        );
+      }
+    });
 
     return Scaffold(
       backgroundColor: ColorManager.white,
@@ -65,10 +83,18 @@ class _HomeBody extends StatelessWidget {
           SizedBox(width: 20.w),
           GestureDetector(
             onTap: () {
-              CacheHelper.removeData(key: "access_token");
-              MagicRouter.navigateTo(
-                page: const LoginView(),
-                withHistory: false,
+              mainDialog(
+                context: context,
+                title: "Logout",
+                subTitle: "Are you sure want to logout?",
+                buttonText: 'Logout',
+                yesPress: () {
+                  CacheHelper.removeData(key: "access_token");
+                  MagicRouter.navigateTo(
+                    page: const LoginView(),
+                    withHistory: false,
+                  );
+                },
               );
             },
             child: SvgIcon(
@@ -80,84 +106,146 @@ class _HomeBody extends StatelessWidget {
           SizedBox(width: 10.w),
         ],
       ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 0.02.sh),
-            CustomText(
-              text: "My Tasks",
-              color: ColorManager.black2,
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w700,
-            ),
-            SizedBox(height: 10.h),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TabItem(
-                    text: "All",
-                    color: ColorManager.mainColor,
-                    textColor: ColorManager.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  TabItem(
-                    text: "Inprogress",
-                    color: ColorManager.grey9,
-                    textColor: ColorManager.grey8,
-                  ),
-                  TabItem(
-                    text: "Waiting",
-                    color: ColorManager.grey9,
-                    textColor: ColorManager.grey8,
-                  ),
-                  TabItem(
-                    text: "Finished",
-                    color: ColorManager.grey9,
-                    textColor: ColorManager.grey8,
-                  ),
-                ],
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await Future.delayed(const Duration(seconds: 1));
+
+          // cubit.selectedItem = 0;
+          // cubit.selectedItemName = "";
+          cubit.products.clear();
+          cubit.isMainLoad = true;
+          cubit.currentPage = 1;
+          // cubit.onSelectedItem(index: 0, name: "");
+
+          cubit.getProducts(
+            status: cubit.selectedItemName,
+          );
+        },
+        color: ColorManager.mainColor,
+        backgroundColor: ColorManager.white,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: 0.02.sh),
+              CustomText(
+                text: "My Tasks",
+                color: ColorManager.black2,
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w700,
               ),
-            ),
-            SizedBox(height: 20.h),
-            Expanded(
-              child: BlocBuilder<HomeCubit, HomeStates>(
-                builder: (context, state) {
-                  if (state is HomeLoadingState) {
-                    return const EmitLoadingItem();
-                  } else if (state is HomeNetworkErrorState) {
-                    return const EmitNetworkItem();
-                  } else if (state is HomeFailedState) {
-                    return SizedBox(
-                      child: EmitFailedItem(text: state.msg),
-                    );
-                  }
-                  return ListView.separated(
-                    itemCount: cubit.products.length,
-                    separatorBuilder: (context, index) => SizedBox(
-                      height: 30.h,
+              SizedBox(height: 10.h),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TabItem(
+                      cubit: cubit,
+                      text: "All",
+                      fontWeight: FontWeight.w700,
+                      index: 0,
                     ),
-                    itemBuilder: (context, index) {
-                      final product = cubit.products[index];
-                      return TaskItem(
-                        id: "${product.id}",
-                        user: "${product.user}",
-                        image: "${product.image}",
-                        title: "${product.title}",
-                        status: "${product.status}",
-                        description: "${product.desc}",
-                        priority: "${product.priority}",
-                        date: "${product.createdAt}",
-                      );
-                    },
-                  );
-                },
+                    TabItem(
+                      cubit: cubit,
+                      text: "Inprogress",
+                      index: 1,
+                    ),
+                    TabItem(
+                      cubit: cubit,
+                      text: "Waiting",
+                      index: 2,
+                    ),
+                    TabItem(
+                      cubit: cubit,
+                      text: "Finished",
+                      index: 3,
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+              SizedBox(height: 20.h),
+              Expanded(
+                child: BlocBuilder<HomeCubit, HomeStates>(
+                  buildWhen: (previous, current) =>
+                      current is! PaginationHomeLoadingState,
+                  builder: (context, state) {
+                    if (state is HomeLoadingState) {
+                      return const EmitStateForRefresh(
+                        widget: EmitLoadingItem(),
+                      );
+                    } else if (state is HomeNetworkErrorState) {
+                      return const EmitStateForRefresh(
+                        widget: EmitNetworkItem(),
+                      );
+                    } else if (state is HomeFailedState) {
+                      return EmitStateForRefresh(
+                        widget: EmitFailedItem(text: state.msg),
+                      );
+                    }
+
+                    return cubit.products.isNotEmpty
+                        ? Stack(
+                            children: [
+                              ListView.builder(
+                                controller: cubit.scrollController,
+                                itemCount: cubit.products.length,
+                                itemBuilder: (context, index) {
+                                  final product = cubit.products[index];
+                                  return Padding(
+                                    padding: EdgeInsets.only(
+                                      bottom: 30.h,
+                                    ),
+                                    child: TaskItem(
+                                      id: "${product.id}",
+                                      user: "${product.user}",
+                                      image: "${product.image}",
+                                      title: "${product.title}",
+                                      status: "${product.status}",
+                                      description: "${product.desc}",
+                                      priority: "${product.priority}",
+                                      date: "${product.createdAt}",
+                                    ),
+                                  );
+                                },
+                              ),
+                              Positioned(
+                                bottom: 0,
+                                child: SizedBox(
+                                  height: 60.h,
+                                  width: 1.sw,
+                                  child: BlocBuilder<HomeCubit, HomeStates>(
+                                    buildWhen: (previous, current) =>
+                                        current is PaginationHomeLoadingState ||
+                                        current is HomeSuccessState,
+                                    builder: (context, state) {
+                                      if (state is PaginationHomeLoadingState) {
+                                        return const EmitLoadingItem();
+                                      } else {
+                                        return const SizedBox.shrink();
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : EmitStateForRefresh(
+                            widget: Center(
+                              child: CustomText(
+                                text: "No Data Found",
+                                color: ColorManager.mainColor,
+                                fontSize: 22.sp,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       floatingActionButton: Column(
